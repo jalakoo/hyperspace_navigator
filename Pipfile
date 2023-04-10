@@ -9,6 +9,7 @@ neo4j = "*"
 pyvis = "*"
 networkx = "*"
 pandas = "*"
+plotly = "*"
 
 [dev-packages]
 

@@ -5,13 +5,33 @@ import networkx as nx
 from pyvis.network import Network
 from models import System
 
+# Using dataframes and scatter plot
+# def display_scatter_map(objects: list[dict]):
+#     import pandas as pd
+#     import numpy as np
+#     import hvplot.pandas  # required for hvplot
+
+#     data = pd.DataFrame(objects)
+
+# TODO: Show just recommended route, don't show hyperspace lanes
+
+
+# Using PyVis
 def display_map(objects: list[System]):
 
     graph = nx.Graph()
 
     for idx, obj in enumerate(objects):
-        graph.add_node(obj.name, x=obj.x, y=obj.y, region=obj.region)
-        if idx > 0:
+        if idx == 0:
+            # Start node
+            graph.add_node(obj.name, x=obj.x, y=obj.y, region=obj.region, color='green')
+        elif idx > 0 and idx < len(objects)-1:
+            # Intermediate nodes
+            graph.add_node(obj.name, x=obj.x, y=obj.y, region=obj.region)
+            graph.add_edge(objects[idx-1].name, obj.name)
+        elif idx == len(objects)-1:
+            # End node
+            graph.add_node(obj.name, x=obj.x, y=obj.y, region=obj.region, color='red')
             graph.add_edge(objects[idx-1].name, obj.name)
 
     # Initiate PyVis network object
@@ -19,7 +39,8 @@ def display_map(objects: list[System]):
                        height='600px',
                        width='100%',
                        bgcolor='#222222',
-                       font_color='white'
+                       font_color='white',
+                       directed=True
                       )
 
     # Take Networkx graph and translate it to a PyVis graph format

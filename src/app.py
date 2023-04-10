@@ -94,9 +94,11 @@ with c3:
             course = get_course(start_system, end_system)
             st.session_state[f'{start_system}_{end_system}'] = course
 
-with st.expander("Show course"):
-    st.write(course)
+
 
 # Generate a galaxy map
 if len(course) > 0:
     display_map(course)
+
+    with st.expander("Show course"):
+        st.write(course)
