@@ -6,6 +6,9 @@ name = "pypi"
 [packages]
 streamlit = "*"
 neo4j = "*"
+pyvis = "*"
+networkx = "*"
+pandas = "*"
 
 [dev-packages]
 
