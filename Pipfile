@@ -10,6 +10,9 @@ pyvis = "*"
 networkx = "*"
 pandas = "*"
 plotly = "*"
+plotly-express = "*"
+matplotlib = "*"
+mplcursors = "*"
 
 [dev-packages]
 

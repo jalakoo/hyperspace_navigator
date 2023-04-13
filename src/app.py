@@ -3,11 +3,11 @@ from neo4j_driver import execute_query
 from utils import list_from_csv
 from models import System
 import pandas as pd
-from map import display_map
+from map import display_map, display_map_matplotlib, display_map_plotly
 
 @st.cache_data
 def get_system_names():
-    return list_from_csv('https://gist.githubusercontent.com/jalakoo/7d2495dbea7040979dc37b8958666a55/raw/6190d57d2f112d832265b07e504df4cdd25725b7/star_wars_systems.csv', 'name')
+    return list_from_csv('https://gist.githubusercontent.com/jalakoo/7d2495dbea7040979dc37b8958666a55/raw', 'name')
 
 # From database
 # def get_system_names():
@@ -16,15 +16,33 @@ def get_system_names():
 #     RETURN DISTINCT n.name
 #     """
 #     return execute_query(query)
+@st.cache_data
+def get_all_systems():
+    query = """
+    MATCH (n:System)
+    WHERE n.name IS NOT NULL AND n.`Coordinate X` IS NOT NULL AND n.`Coordinate Y` IS NOT NULL AND n.Region IS NOT NULL
+    RETURN n
+    """
+    try:
+        records = execute_query(query)
+        # Maybe good time to start using that OGM
+        result = []
+        for r in records:
+            s = System(name=r['n'].get('name', None), x=r['n'].get('Coordinate X', None), y=r['n'].get('Coordinate Y', None), region=r['n'].get('Region', None))
+            # print(f'\n System: {s}')
+            result.append(s)
+        return result
+    except Exception as e:
+        print(f'Error: {e}')
+        return []
 
 @st.cache_data
 def get_course(start_system, end_system)->list[System]:
     # Returns a list of System objects
     query = """
         MATCH (start:System {name: $start_system})
-        WITH start
         MATCH (end:System {name: $end_system}),
-        path = shortestPath((start)-[:CONNECTED_TO*]-(end))
+        path = shortestPath((start)-[:CONNECTED_TO|NEAR*1..30]-(end))
         RETURN path
     """
     path = execute_query(query, params={
@@ -35,7 +53,7 @@ def get_course(start_system, end_system)->list[System]:
         nodes = path[0]['path'].nodes
         result = []
         for node in nodes:
-            # print(f'Node: {node}')
+            print(f'Node: {node}')
             result.append(System(name=node['name'], x=node['Coordinate X'], y=node['Coordinate Y'], region=node['Region']))
     except Exception as e:
         print(f'\nError: {e} from query response: {path}')
@@ -75,10 +93,10 @@ systems = get_system_names()
 course = []
 
 # System Search
-c1, c2, c3, c4 = st.columns([2,2,4,1])
+c1, c2, c3, c4 = st.columns([1,1,3,1])
 with c1:
-    # Tatooine is the default
-    start_system = st.selectbox("Start System", systems, index=1711)
+    # Coruscant is the default
+    start_system = st.selectbox("Start System", systems, index=377)
 with c2:
     # Alderaan is the default
     end_system = st.selectbox("End System", systems, index=36)
@@ -104,12 +122,22 @@ with c4:
         else:
             course = get_course(start_system, end_system)
             st.session_state[f'{start_system}_{end_system}'] = course
+        if len(course) == 0:
+            st.error(f'No course found from {start_system} to {end_system}.')
 
 
 
 # Generate a galaxy map
 if len(course) > 0:
-    display_map(course)
-
+    display_map_plotly(
+    get_all_systems(),
+    course)
+    # display_map(course)
     with st.expander("Show course"):
         st.write(course)
+
+# all_systems = get_all_systems()
+# print(f'All systems: {all_systems}')
+# display_map_plotly(
+#     get_all_systems(),
+#     course)
