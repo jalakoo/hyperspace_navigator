@@ -31,13 +31,15 @@ def get_course(start_system, end_system)->list[System]:
         'start_system': start_system, 
         'end_system': end_system
         })
-    # print(path)
-    nodes = path[0]['path'].nodes
-    result = []
-    for node in nodes:
-        # print(f'Node: {node}')
-        result.append(System(name=node['name'], x=node['Coordinate X'], y=node['Coordinate Y'], region=node['Region']))
-    # print(result)
+    try:
+        nodes = path[0]['path'].nodes
+        result = []
+        for node in nodes:
+            # print(f'Node: {node}')
+            result.append(System(name=node['name'], x=node['Coordinate X'], y=node['Coordinate Y'], region=node['Region']))
+    except Exception as e:
+        print(f'\nError: {e} from query response: {path}')
+        result = []
     return result
 
 
@@ -54,7 +56,7 @@ st.set_page_config(
 )
 
 # Convulted way to center image
-col1, col2, col3 = st.columns([1,1,1])
+col1, col2, col3 = st.columns([2,1,2])
 with col1:
     st.write('')
 with col2:
@@ -73,7 +75,7 @@ systems = get_system_names()
 course = []
 
 # System Search
-c1, c2, c3 = st.columns([2,2,1])
+c1, c2, c3, c4 = st.columns([2,2,4,1])
 with c1:
     # Tatooine is the default
     start_system = st.selectbox("Start System", systems, index=1711)
@@ -81,6 +83,15 @@ with c2:
     # Alderaan is the default
     end_system = st.selectbox("End System", systems, index=36)
 with c3:
+    # Cheap spacer
+    st.markdown("")
+    st.markdown("")
+    with st.expander("Advanced Options"):
+        include = st.multiselect("Intermediary Stops", [x for x in systems if x != start_system])
+        exclude = st.multiselect("Avoid", [x for x in systems if x != start_system])
+
+with c4:
+    # Cheap spacer
     st.markdown("")
     st.markdown("")
     if st.button('Plot course'):
