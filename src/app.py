@@ -37,6 +37,28 @@ def get_all_systems():
         return []
 
 @st.cache_data
+def get_hyperspace_systems():
+    # Probably more efficient if we add a flag to the systems which would be grabbed in the earlier query
+    query = """
+    MATCH (n:System)-[:CONNECTED_TO]->(m:System)
+    WITH DISTINCT n
+    WHERE n.name IS NOT NULL AND n.`Coordinate X` IS NOT NULL AND n.`Coordinate Y` IS NOT NULL AND n.Region IS NOT NULL
+    RETURN n
+    """
+    try:
+        records = execute_query(query)
+        # Maybe good time to start using that OGM
+        result = []
+        for r in records:
+            s = System(name=r['n'].get('name', None), x=r['n'].get('Coordinate X', None), y=r['n'].get('Coordinate Y', None), region=r['n'].get('Region', None, type='HyperSpace Connected System'))
+            # print(f'\n System: {s}')
+            result.append(s)
+        return result
+    except Exception as e:
+        print(f'Error: {e}')
+        return []
+
+@st.cache_data
 def get_course(start_system, end_system)->list[System]:
     # Returns a list of System objects
     query = """
@@ -54,7 +76,7 @@ def get_course(start_system, end_system)->list[System]:
         result = []
         for node in nodes:
             print(f'Node: {node}')
-            result.append(System(name=node['name'], x=node['Coordinate X'], y=node['Coordinate Y'], region=node['Region']))
+            result.append(System(name=node['name'], x=node['Coordinate X'], y=node['Coordinate Y'], region=node['Region'], type='Plotted System'))
     except Exception as e:
         print(f'\nError: {e} from query response: {path}')
         result = []
@@ -126,12 +148,27 @@ with c4:
             st.error(f'No course found from {start_system} to {end_system}.')
 
 
+# Pull down all systems
+if st.session_state.get('all_systems') is None:
+    all = get_all_systems()
+    if all is None or len(all) == 0:
+        st.error('No systems found. Please check your Neo4j database.')
+        st.stop()
+    hyperspace = get_hyperspace_systems()
+
+
 
 # Generate a galaxy map
 if len(course) > 0:
+    # all = get_all_systems()
+    # if all is None or len(all) == 0:
+    #     st.error('No systems found. Please check your Neo4j database.')
+    #     st.stop()
+    # hyperspace = get_hyperspace_systems()
+
     display_map_plotly(
-    get_all_systems(),
-    course)
+        all,
+        course)
     # display_map(course)
     with st.expander("Show course"):
         st.write(course)

@@ -22,6 +22,8 @@ def display_map_plotly(
         all_systems: list[System],
         systems: list[System]):
     
+    # TODO: Uptimize this to only update the course lines
+
     import plotly.express as px
 
     # Filter out anything without coordinates - should have
@@ -30,19 +32,58 @@ def display_map_plotly(
     filtered_course_systems = [o for o in systems if o.x is not None and o.y is not None]
 
     # Data needs to be separated into a list of x & y values
-    all_x = [o.x for o in filtered_all_systems]
-    all_y = [o.y for o in filtered_all_systems]
-    course_x = [o.x for o in systems]
-    course_y = [o.y for o in systems]
+    # all_df = pd.DataFrame([{
+    #     'name': s.name,
+    #     'x': s.x,
+    #     'y': s.y,
+    #     'region': s.region,
+    #     'color': 'black'
+    # } for s in filtered_all_systems])
 
-    fig = px.scatter(data_frame=filtered_all_systems,
-                 x='x',   # specify x-column from dictionary data
-                 y='y',   # specify y-column from dictionary data
-                 title='Scatter Plot with Negative Coordinates',
-                #  labels={'x': 'X-axis Label', 'y': 'Y-axis Label'},
-                 hover_name='name',  # specify column for hover information
-                 hover_data=['region'],  # specify columns for hover information
-                 )
+    # hyperspace_df = pd.DataFrame([{
+    #     'name': s.name,
+    #     'x': s.x,
+    #     'y': s.y,
+    #     'region': s.region,
+    #     'color': 'grey'
+    # } for s in hyperspace_systems])
+
+    # course_df = pd.DataFrame([{
+    #     'name': s.name,
+    #     'x': s.x,
+    #     'y': s.y,
+    #     'region': s.region,
+    #     'color': 'green'
+    # } for s in filtered_course_systems])
+
+    # all_x = [o.x for o in filtered_all_systems]
+    # all_y = [o.y for o in filtered_all_systems]
+    # hyperspace_x = [o.x for o in hyperspace_systems]
+    # hyperspace_y = [o.y for o in hyperspace_systems]
+    # course_x = [o.x for o in systems]
+    # course_y = [o.y for o in systems]
+
+
+    try:
+        fig = px.scatter(filtered_all_systems,
+                    x='x',   # specify x-column from dictionary data
+                    y='y',   # specify y-column from dictionary data
+                    title='Scatter Plot with Negative Coordinates',
+                    #  labels={'x': 'X-axis Label', 'y': 'Y-axis Label'},
+                    hover_name='name',  # specify column for hover information
+                    hover_data=['region'],  # specify columns for hover information
+                    color='type'
+                    )
+        # fig = px.scatter(
+        #     data_frame = all_df,
+        #     title='Scatter Plot with Negative Coordinates',
+        #     #  labels={'x': 'X-axis Label', 'y': 'Y-axis Label'},
+        #     hover_name='name',  # specify column for hover information
+        #     hover_data=['x','y','region'],  # specify columns for hover information
+        #     )
+    except Exception as e:
+        print(f'Error: {e}. \n\nAll systems: {len(all_systems)}, \n\n plotted systems: {len(systems)}')
+        st.stop()
     
     # Set equal aspect ratio and autosize properties
     fig.update_layout(
@@ -51,9 +92,25 @@ def display_map_plotly(
         dragmode='pan',
     )
 
+    # Show hyperspace lanes
+    # fig.add_trace(
+    #     px.line(hyperspace_systems, title='Hyperspace', x='x', y='y').data[0]
+    # )
+
+    # Show course plots
     fig.add_trace(
-        px.line(x=course_x, y=course_y, title='Course').data[0]
+        px.line(
+        filtered_course_systems,
+        x='x',
+        y='y',
+        title='Course').data[0]
     )
+
+    fig.update_traces(marker=dict(size=12,
+                              line=dict(width=2,
+                                        color='DarkSlateGrey')),
+                  selector=dict(mode='markers'))
+
 
     # Show the plot
     st.plotly_chart(fig)
