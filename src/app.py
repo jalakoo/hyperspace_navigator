@@ -63,28 +63,21 @@ def get_hyperspace_systems():
 def get_course(
     start_system, 
     end_system,
-    include_systems: list[str] = None,
     exclude_systems: list[str] = []
     )->list[System]:
     # Returns a list of System objects
-
-
-    # If no include_systems are provided, we'll just use the start system
-    # Otherwise the advanced query will try to find a route that includes all connected systems
-    if include_systems is None:
-        include_systems = [start_system]
 
     query = """
         MATCH (start:System {name: $start_system})
         MATCH (end:System {name: $end_system}),
         path = shortestPath((start)-[:CONNECTED_TO|NEAR*1..100]-(end))
+        WHERE ALL(y IN nodes(path) WHERE NOT y.name IN $exclude_systems)
         RETURN path
     """
 
     path = execute_query(query, params={
         'start_system': start_system, 
         'end_system': end_system,
-        'include_systems': include_systems,
         'exclude_systems': exclude_systems
         })
     try:
@@ -144,7 +137,7 @@ with c3:
     st.markdown("")
     st.markdown("")
     with st.expander("Advanced Options"):
-        include = st.multiselect("Intermediary Stops", [x for x in systems if x != start_system])
+        # include = st.multiselect("Intermediary Stops", [x for x in systems if x != start_system])
         exclude = st.multiselect("Avoid", [x for x in systems if x != start_system])
 
 with c4:
@@ -155,12 +148,12 @@ with c4:
         # st.write(f'Plotting course from {start_system} to {end_system}...')
 
         # Check to see if course already ran
-        if st.session_state.get(f'{start_system}_{end_system}'):
+        if st.session_state.get(f'{start_system}_{end_system}_{exclude}'):
             print(f'Course already plotted from {start_system} to {end_system}. Retrieving from session state.')
-            course = st.session_state[f'{start_system}_{end_system}']
+            course = st.session_state[f'{start_system}_{end_system}_{exclude}']
         else:
-            course = get_course(start_system, end_system, include, exclude)
-            st.session_state[f'{start_system}_{end_system}'] = course
+            course = get_course(start_system, end_system, exclude)
+            st.session_state[f'{start_system}_{end_system}_{exclude}'] = course
         if len(course) == 0:
             st.error(f'No course found from {start_system} to {end_system}.')
 
