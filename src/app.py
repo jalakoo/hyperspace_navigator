@@ -2,25 +2,26 @@ import streamlit as st
 from neo4j_driver import execute_query
 from utils import list_from_csv
 from models import System
-import pandas as pd
-from map import display_map, display_map_matplotlib, display_map_plotly
+from map_matplotlib import map_matplotlib, update_matplotlib
 
 @st.cache_data
 def get_system_names():
+    # Returns a list of famous system names
     return list_from_csv('https://gist.githubusercontent.com/jalakoo/7d2495dbea7040979dc37b8958666a55/raw', 'name')
 
-# From database
+# If wanting from database instead
 # def get_system_names():
 #     query = """
 #     MATCH (n:System)
 #     RETURN DISTINCT n.name
 #     """
 #     return execute_query(query)
+
 @st.cache_data
 def get_all_systems():
     query = """
     MATCH (n:System)
-    WHERE n.name IS NOT NULL AND n.`Coordinate X` IS NOT NULL AND n.`Coordinate Y` IS NOT NULL AND n.Region IS NOT NULL
+    WHERE n.name IS NOT NULL AND n.X IS NOT NULL AND n.Y IS NOT NULL AND n.Region IS NOT NULL
     RETURN n
     """
     try:
@@ -28,7 +29,7 @@ def get_all_systems():
         # Maybe good time to start using that OGM
         result = []
         for r in records:
-            s = System(name=r['n'].get('name', None), x=r['n'].get('Coordinate X', None), y=r['n'].get('Coordinate Y', None), region=r['n'].get('Region', None))
+            s = System(name=r['n'].get('name', None), x=r['n'].get('X', None), y=r['n'].get('Y', None), region=r['n'].get('Region', None))
             # print(f'\n System: {s}')
             result.append(s)
         return result
@@ -42,7 +43,7 @@ def get_hyperspace_systems():
     query = """
     MATCH (n:System)-[:CONNECTED_TO]->(m:System)
     WITH DISTINCT n
-    WHERE n.name IS NOT NULL AND n.`Coordinate X` IS NOT NULL AND n.`Coordinate Y` IS NOT NULL AND n.Region IS NOT NULL
+    WHERE n.name IS NOT NULL AND n.X IS NOT NULL AND n.Y IS NOT NULL AND n.Region IS NOT NULL
     RETURN n
     """
     try:
@@ -50,7 +51,7 @@ def get_hyperspace_systems():
         # Maybe good time to start using that OGM
         result = []
         for r in records:
-            s = System(name=r['n'].get('name', None), x=r['n'].get('Coordinate X', None), y=r['n'].get('Coordinate Y', None), region=r['n'].get('Region', None, type='HyperSpace Connected System'))
+            s = System(name=r['n'].get('name', None), x=r['n'].get('X', None), y=r['n'].get('Y', None), region=r['n'].get('Region', None, type='HyperSpace Connected System'))
             # print(f'\n System: {s}')
             result.append(s)
         return result
@@ -59,24 +60,39 @@ def get_hyperspace_systems():
         return []
 
 @st.cache_data
-def get_course(start_system, end_system)->list[System]:
+def get_course(
+    start_system, 
+    end_system,
+    include_systems: list[str] = None,
+    exclude_systems: list[str] = []
+    )->list[System]:
     # Returns a list of System objects
+
+
+    # If no include_systems are provided, we'll just use the start system
+    # Otherwise the advanced query will try to find a route that includes all connected systems
+    if include_systems is None:
+        include_systems = [start_system]
+
     query = """
         MATCH (start:System {name: $start_system})
         MATCH (end:System {name: $end_system}),
-        path = shortestPath((start)-[:CONNECTED_TO|NEAR*1..30]-(end))
+        path = shortestPath((start)-[:CONNECTED_TO|NEAR*1..100]-(end))
         RETURN path
     """
+
     path = execute_query(query, params={
         'start_system': start_system, 
-        'end_system': end_system
+        'end_system': end_system,
+        'include_systems': include_systems,
+        'exclude_systems': exclude_systems
         })
     try:
         nodes = path[0]['path'].nodes
         result = []
         for node in nodes:
-            print(f'Node: {node}')
-            result.append(System(name=node['name'], x=node['Coordinate X'], y=node['Coordinate Y'], region=node['Region'], type='Plotted System'))
+            # print(f'Node: {node}')
+            result.append(System(name=node['name'], x=node['X'], y=node['Y'], region=node['Region'], type='Plotted System'))
     except Exception as e:
         print(f'\nError: {e} from query response: {path}')
         result = []
@@ -96,20 +112,21 @@ st.set_page_config(
 )
 
 # Convulted way to center image
-col1, col2, col3 = st.columns([2,1,2])
-with col1:
-    st.write('')
-with col2:
-    st.image('./media/benjamin-cottrell-astralanalyzer.png')
-with col3:
-    st.write('')
-
+# col1, col2, col3 = st.columns([2,1,2])
+# with col1:
+#     st.write('')
+# with col2:
+#     st.image('./media/benjamin-cottrell-astralanalyzer.png', width=100)
+# with col3:
+#     st.write('')
 # st.title("Hyperspace Navigator")
-st.markdown("<h1 style='text-align: center; color: white;'>Hyperspace Navigator</h1>", unsafe_allow_html=True)
+# st.markdown("<h1 style='text-align: center; color: white;'>Hyperspace Navigator</h1>", unsafe_allow_html=True)
 
-
-# TODO:
-# Galaxy Map
+col1, col2 = st.columns([4,1])
+with col1:
+    st.title("Hyperspace Navigator")
+with col2:
+    st.image('./media/benjamin-cottrell-astralanalyzer.png', width=80)
 
 systems = get_system_names()
 course = []
@@ -142,7 +159,7 @@ with c4:
             print(f'Course already plotted from {start_system} to {end_system}. Retrieving from session state.')
             course = st.session_state[f'{start_system}_{end_system}']
         else:
-            course = get_course(start_system, end_system)
+            course = get_course(start_system, end_system, include, exclude)
             st.session_state[f'{start_system}_{end_system}'] = course
         if len(course) == 0:
             st.error(f'No course found from {start_system} to {end_system}.')
@@ -156,25 +173,16 @@ if st.session_state.get('all_systems') is None:
         st.stop()
     hyperspace = get_hyperspace_systems()
 
+#  Display master galaxy map
+fig, ax = map_matplotlib(all)
 
-
-# Generate a galaxy map
+# Update map
 if len(course) > 0:
-    # all = get_all_systems()
-    # if all is None or len(all) == 0:
-    #     st.error('No systems found. Please check your Neo4j database.')
-    #     st.stop()
-    # hyperspace = get_hyperspace_systems()
+    update_matplotlib(fig, ax, course)
 
-    display_map_plotly(
-        all,
-        course)
-    # display_map(course)
-    with st.expander("Show course"):
-        st.write(course)
+st.pyplot(fig)
 
-# all_systems = get_all_systems()
-# print(f'All systems: {all_systems}')
-# display_map_plotly(
-#     get_all_systems(),
-#     course)
+# Plotted course
+if len(course) > 0:
+    st.write(f'Recommended Course:')
+    st.write(course)
