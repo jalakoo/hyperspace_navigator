@@ -36,26 +36,28 @@ def map_matplotlib(
         systems: list[System]
     ):
 
-
-
     # Data needs to be separated into a list of x & y values
     all_x = [o.x for o in systems]
     all_y = [o.y for o in systems]
     labels = [o.name for o in systems]
 
     # Config
-    # plt.axis('off')
     plt.style.use('dark_background')
+
+    # These options do not work
+    # plt.grid(True, color="yellow")
+    # plt.grid(color='yellow', linestyle='-.', linewidth=0.7)
+    # plt.legend(['Data'], loc='best', facecolor='black', edgecolor='yellow', labelcolor='yellow', draggable=True)
 
     fig, ax = plt.subplots()
 
     ax.grid(color='white')
 
-    # Configure legend with white text color
-    ax.legend(['Data'], loc='best', facecolor='black', edgecolor='white', labelcolor='white', draggable=True)
+    # These have no effect
+    # ax.legend(['Data'], loc='best', facecolor='black', edgecolor='yellow', labelcolor='yellow', draggable=True)
 
     # Create a scatter plot
-    scatter_plot = ax.scatter(all_x, all_y, s=3)
+    ax.scatter(all_x, all_y, s=3)
 
     # Configure scatter plot
     # Set axis labels
@@ -65,11 +67,9 @@ def map_matplotlib(
     # Set plot title
     # plt.title('Recommended Navigation Plot')
 
-    # Show grid
-    plt.grid(True, color="white")
-
     # Tooltips
     # Define tooltips for points and lines
+    # These do not work
     # Set up mplcursors
     # cursor = mplcursors.cursor(hover=True)
     # cursor.connect("add", lambda sel: sel.annotation.set_text(f'({sel.target[0]:.2f}, {sel.target[1]:.2f})'))
@@ -93,81 +93,24 @@ def map_matplotlib(
 
     # DOESN'T WORK
     # Configure cursor to display hover info
-    cursors = mplcursors.cursor(scatter_plot, hover=True)
+    # cursors = mplcursors.cursor(scatter_plot, hover=True)
 
-    # Define the hover info content
-    @cursors.connect("add")
-    def on_add(sel):
-        ind = sel.target.index
-        label = labels[ind]
-        sel.annotation.set(text=label)
+    # # Define the hover info content
+    # @cursors.connect("add")
+    # def on_add(sel):
+    #     ind = sel.target.index
+    #     label = labels[ind]
+    #     sel.annotation.set(text=label)
 
-        # Set the visibility of the annotation based on selection state
-        sel.annotation.set_visible(sel.index == ind)
-
-
+    #     # Set the visibility of the annotation based on selection state
+    #     sel.annotation.set_visible(sel.index == ind)
 
     return (fig, ax)
 
-def display_map_matplotlib(
-        all_systems: list[System],
-        systems: list[System]
-    ):
 
-    import matplotlib.pyplot as plt
-    import mplcursors
-
-    # Data needs to be separated into a list of x & y values
-    all_x = [o.x for o in all_systems]
-    all_y = [o.y for o in all_systems]
-
-    course_x = [o.x for o in systems]
-    course_y = [o.y for o in systems]
-
-    # Config
-    # plt.axis('off')
-    plt.style.use('dark_background')
-
-    # Create a scatter plot
-    scatter_plot = plt.scatter(all_x, all_y)
-
-    # Configure scatter plot
-    # Set axis labels
-    # plt.xlabel('X-axis')
-    # plt.ylabel('Y-axis')
-
-    # Set plot title
-    # plt.title('Recommended Navigation Plot')
-
-    # Show grid
-    plt.grid(True)
-
-    # Display course plot
-    # Connect coursse of systems with lines
-    line_plot = plt.plot(course_x, course_y, 'b--', linewidth=1.5)  # Use blue dashed lines with linewidth of 1.5
-
-
-    # Tooltips
-    # Define tooltips for points and lines
-    # Set up mplcursors
-    cursor = mplcursors.cursor(hover=True)
-    cursor.connect("add", lambda sel: sel.annotation.set_text(f'({sel.target[0]:.2f}, {sel.target[1]:.2f})'))
-
-    scatter_tooltip = mplcursors.cursor(scatter_plot, hover=True)
-    # line_tooltip = mplcursors.cursor(line_plot, hover=True)
-
-    # Set tooltip formats
-    scatter_tooltip.formatter = '{label}: {x:.2f}, {y:.2f}'.format
-    # line_tooltip.formatter = '{label}: {x:.2f}, {y:.2f}'.format
-
-    # Add labels for points
-    # for s in filtered_all_systems:
-    #     plt.text(s.x, s.y, f'{s.name}', ha='left', va='bottom')
-    st.pyplot(plt)
-
-def display_map_maplotlib(
-        all_systems: list[System],
-):
-    fig = map_matplotlib(all_systems)
-    fig_html = mpld3.fig_to_html(fig)
-    components.html(fig_html, height=600)
+# def display_map_maplotlib(
+#         all_systems: list[System],
+# ):
+#     fig = map_matplotlib(all_systems)
+#     fig_html = mpld3.fig_to_html(fig)
+#     components.html(fig_html, height=600)

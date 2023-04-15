@@ -9,7 +9,7 @@ def get_system_names():
     # Returns a list of famous system names
     return list_from_csv('https://gist.githubusercontent.com/jalakoo/7d2495dbea7040979dc37b8958666a55/raw', 'name')
 
-# If wanting from database instead
+# If wanting from database instead from a csv list
 # def get_system_names():
 #     query = """
 #     MATCH (n:System)
@@ -52,7 +52,6 @@ def get_hyperspace_systems():
         result = []
         for r in records:
             s = System(name=r['n'].get('name', None), x=r['n'].get('X', None), y=r['n'].get('Y', None), region=r['n'].get('Region', None, type='HyperSpace Connected System'))
-            # print(f'\n System: {s}')
             result.append(s)
         return result
     except Exception as e:
@@ -63,14 +62,18 @@ def get_hyperspace_systems():
 def get_course(
     start_system, 
     end_system,
+    max_jumps: int = 100,
+    include_systems: list[str] = [],
     exclude_systems: list[str] = []
     )->list[System]:
     # Returns a list of System objects
 
-    query = """
-        MATCH (start:System {name: $start_system})
-        MATCH (end:System {name: $end_system}),
-        path = shortestPath((start)-[:CONNECTED_TO|NEAR*1..100]-(end))
+    # TODO: Support intermediate include_systems
+    
+    query = f"""
+        MATCH (start:System {{name: $start_system}})
+        MATCH (end:System {{name: $end_system}}),
+        path = shortestPath((start)-[:CONNECTED_TO|NEAR*1..{max_jumps}]-(end))
         WHERE ALL(y IN nodes(path) WHERE NOT y.name IN $exclude_systems)
         RETURN path
     """
@@ -97,14 +100,14 @@ st.set_page_config(
     page_title="Star Wars Hyperspace Navigator",
     layout="wide",
     initial_sidebar_state="expanded",
-    menu_items={
-        'Get Help': 'https://www.extremelycoolapp.com/help',
-        'Report a bug': "https://www.extremelycoolapp.com/bug",
-        'About': "# This is a header. This is an *extremely* cool app!"
-    }
+    # menu_items={
+    #     'Get Help': 'https://www.extremelycoolapp.com/help',
+    #     'Report a bug': "https://www.extremelycoolapp.com/bug",
+    #     'About': "# This is a header. This is an *extremely* cool app!"
+    # }
 )
 
-# Convulted way to center image
+# HEADER
 # col1, col2, col3 = st.columns([2,1,2])
 # with col1:
 #     st.write('')
@@ -124,7 +127,7 @@ with col2:
 systems = get_system_names()
 course = []
 
-# System Search
+# SEARCH
 c1, c2, c3, c4 = st.columns([1,1,3,1])
 with c1:
     # Coruscant is the default
@@ -137,23 +140,24 @@ with c3:
     st.markdown("")
     st.markdown("")
     with st.expander("Advanced Options"):
-        # include = st.multiselect("Intermediary Stops", [x for x in systems if x != start_system])
-        exclude = st.multiselect("Avoid", [x for x in systems if x != start_system])
+        max_jumps = st.slider("Max Jumps", 1, 200, 100)
+        include = []
+        # include = st.multiselect("Intermediary Systems", [x for x in systems if x != start_system and x != end_system])
+        exclude = st.multiselect("Systems to Avoid", [x for x in systems if x != start_system and x != end_system])
 
 with c4:
     # Cheap spacer
     st.markdown("")
     st.markdown("")
     if st.button('Plot course'):
-        # st.write(f'Plotting course from {start_system} to {end_system}...')
-
-        # Check to see if course already ran
-        if st.session_state.get(f'{start_system}_{end_system}_{exclude}'):
+        # Check to see if course already cached
+        state_id = f'{start_system}_{end_system}_{max_jumps}_{include}_{exclude}'
+        if st.session_state.get(state_id):
             print(f'Course already plotted from {start_system} to {end_system}. Retrieving from session state.')
-            course = st.session_state[f'{start_system}_{end_system}_{exclude}']
+            course = st.session_state[state_id]
         else:
-            course = get_course(start_system, end_system, exclude)
-            st.session_state[f'{start_system}_{end_system}_{exclude}'] = course
+            course = get_course(start_system, end_system, max_jumps, include, exclude)
+            st.session_state[state_id] = course
         if len(course) == 0:
             st.error(f'No course found from {start_system} to {end_system}.')
 
