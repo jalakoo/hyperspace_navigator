@@ -13,6 +13,7 @@ plotly = "*"
 plotly-express = "*"
 matplotlib = "*"
 streamlit-cytoscapejs = "*"
+importlib-resources = "*"
 
 [dev-packages]
 
