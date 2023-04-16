@@ -9,14 +9,6 @@ from models import System
 import plotly.express as px
 import networkx as nx
 
-# Using dataframes and scatter plot
-# def display_scatter_map(objects: list[dict]):
-#     import pandas as pd
-#     import numpy as np
-#     import hvplot.pandas  # required for hvplot
-
-#     data = pd.DataFrame(objects)
-
 # TODO: Show just recommended route, don't show hyperspace lanes
 
 def display_map_plotly(

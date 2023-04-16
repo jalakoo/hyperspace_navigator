@@ -1,9 +1,9 @@
 from models import System
 import streamlit as st
 import matplotlib.pyplot as plt
-import mplcursors
-import mpld3
-import streamlit.components.v1 as components
+# import mplcursors
+# import mpld3
+# import streamlit.components.v1 as components
 
 def update_matplotlib(
     fig,

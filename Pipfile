@@ -12,9 +12,7 @@ pandas = "*"
 plotly = "*"
 plotly-express = "*"
 matplotlib = "*"
-mplcursors = "*"
 streamlit-cytoscapejs = "*"
-mpld3 = "*"
 
 [dev-packages]
 
