@@ -10,3 +10,7 @@ pipenv shell
 pipenv sync
 pipenv run streamlit run src/app.py
 ```
+
+## Requirements.txt
+To update:
+`pipenv lock -r > requirements.txt`
