@@ -1,5 +1,7 @@
 from models import System
 import streamlit as st
+import matplotlib
+matplotlib.use('Agg')
 import matplotlib.pyplot as plt
 # import mplcursors
 # import mpld3
