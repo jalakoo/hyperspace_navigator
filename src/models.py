@@ -6,3 +6,4 @@ class System:
     x: float
     y: float
     region: str
+    type: str = 'System'
