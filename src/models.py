@@ -7,3 +7,4 @@ class System:
     y: float
     region: str
     type: str = 'System'
+    importance: float = 0.0

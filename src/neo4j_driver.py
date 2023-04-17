@@ -1,6 +1,7 @@
 from neo4j import GraphDatabase, basic_auth
 import streamlit as st
 import logging
+import sys
 
 host = st.secrets['NEO4J_URI']
 user = st.secrets['NEO4J_USER']

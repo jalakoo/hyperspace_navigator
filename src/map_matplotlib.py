@@ -18,9 +18,9 @@ def update_matplotlib(
     for i, label in enumerate(labels):
         axis.text(course_x[i], course_y[i], label)
 
-    plt.plot(course_x, course_y, 'b--', linewidth=1.5)  # Use blue dashed lines with linewidth of 1.5
+    plt.plot(course_x, course_y, 'b-', linewidth=0.5)
 
-    margin = 1000
+    margin = 100
     try:
         min_x = min(course_x) - margin
         max_x = max(course_x) + margin
@@ -59,6 +59,7 @@ def map_matplotlib(
     # ax.legend(['Data'], loc='best', facecolor='black', edgecolor='yellow', labelcolor='yellow', draggable=True)
 
     # Create a scatter plot
+    # TODO: Support various sizes and colors dependent on system type and importance
     ax.scatter(all_x, all_y, s=3)
 
     # Configure scatter plot
