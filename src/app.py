@@ -72,7 +72,7 @@ def get_all_systems():
 #         print(f'Error: {e}')
 #         return []
 
-@st.cache_data
+# @st.cache_data
 def get_course(
     start_system, 
     end_system,
@@ -91,9 +91,24 @@ def get_course(
         WHERE ALL(y IN nodes(path) WHERE NOT y.name IN $exclude_systems)
         RETURN path
     """
+#     query = f"""
+# MATCH (n:System)
+# WHERE n.name IN $include_systems
+# WITH collect(n) as nodes
+# UNWIND nodes as n
+# UNWIND nodes as m
+# WITH * WHERE n.name < m.name
+# MATCH path = shortestPath( (n)-[:CONNECTED_TO|NEAR*..{max_jumps}]-(m) )
+# WHERE ALL(x IN nodes(path) WHERE NOT x.name IN $exclude_systems)
+# RETURN path
+#     """
+    # include_systems.insert(0, end_system)
+    # include_systems.append(start_system)
+    # print(f'included systems: {include_systems}')
     path = execute_query(query, params={
         'start_system': start_system, 
         'end_system': end_system,
+        'include_systems': include_systems,
         'exclude_systems': exclude_systems
         })
     try:
@@ -164,12 +179,12 @@ course = []
 c1, c2, c3, c4 = st.columns([1,1,3,1])
 with c1:
     # Coruscant is the default
-    start_index = index_for_system(system_names, 'Coruscant') 
-    start_system = st.selectbox("Start System", system_names, index=start_index)
+    start_index = index_for_system(all_system_names, 'Coruscant') 
+    start_system = st.selectbox("Start System", all_system_names, index=start_index)
 with c2:
     # Alderaan is the default
-    end_index = index_for_system(system_names, 'Alderaan')
-    end_system = st.selectbox("End System", system_names, index=end_index)
+    end_index = index_for_system(all_system_names, 'Alderaan')
+    end_system = st.selectbox("End System", all_system_names, index=end_index)
 with c3:
     # Cheap spacer
     st.markdown("")
@@ -177,7 +192,7 @@ with c3:
     with st.expander("Advanced Options"):
         max_jumps = st.slider("Max Jumps", 1, 200, 100)
         include = []
-        # include = st.multiselect("Intermediary Systems", [x for x in systems if x != start_system and x != end_system])
+        # include = st.multiselect("Intermediary Systems", [x for x in all_system_names if x != start_system and x != end_system])
         exclude = st.multiselect("Systems to Avoid", [x for x in all_system_names if x != start_system and x != end_system])
 
 with c4:
@@ -207,5 +222,7 @@ st.pyplot(fig)
 
 # Plotted course
 if len(course) > 0:
+    st.write(f'Plotted Jumps: {len(course)-1}')
     st.write(f'Recommended Course:')
-    st.write(course)
+    cleaned_course = [{"System": x.name, "Coordinates": f'{x.x}, {x.y}',"Region": x.region} for x in course]
+    st.table(cleaned_course)
