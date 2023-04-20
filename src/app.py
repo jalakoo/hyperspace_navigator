@@ -2,7 +2,7 @@ import streamlit as st
 from neo4j_driver import execute_query
 from utils import list_from_csv
 from models import System
-from map_matplotlib import map_matplotlib, update_matplotlib
+from map_matplotlib import map_matplotlib, update_matplotlib, update_markers
 
 # @st.cache_data
 # def get_system_names():
@@ -43,7 +43,7 @@ def get_all_systems():
         # Maybe good time to start using that OGM
         result = []
         for r in records:
-            s = System(name=r['n'].get('name', None), x=r['n'].get('X', None), y=r['n'].get('Y', None), region=r['n'].get('Region', None), type = "System", importance=r['n'].get('importance', 0.0))
+            s = System(name=r['n'].get('name', None), x=r['n'].get('X', None), y=r['n'].get('Y', None), region=r['n'].get('Region', None), type = r['n'].get('type', None), importance=r['n'].get('importance', 0.0))
             # print(f'\n System: {s}')
             result.append(s)
         return result
@@ -179,7 +179,7 @@ course = []
 c1, c2, c3, c4 = st.columns([1,1,3,1])
 with c1:
     # Coruscant is the default
-    start_index = index_for_system(all_system_names, 'Coruscant') 
+    start_index = index_for_system(all_system_names, 'Tatooine') 
     start_system = st.selectbox("Start System", all_system_names, index=start_index)
 with c2:
     # Alderaan is the default
@@ -217,6 +217,12 @@ fig, ax = map_matplotlib(all)
 # Update map
 if len(course) > 0:
     update_matplotlib(fig, ax, course)
+
+# Update markers selected
+s_index = index_for_system(all_system_names, start_system)
+e_index = index_for_system(all_system_names, end_system)
+selected_systems = [get_all_systems()[s_index], get_all_systems()[e_index]]
+update_markers(ax,selected_systems)
 
 st.pyplot(fig)
 

@@ -7,6 +7,14 @@ import matplotlib.pyplot as plt
 # import mpld3
 # import streamlit.components.v1 as components
 
+def update_markers(
+    axis,
+    highlight_systems: list[System]
+):
+    labels = [o.name for o in highlight_systems]
+    for i, label in enumerate(labels):
+        axis.text(highlight_systems[i].x, highlight_systems[i].y, label)
+
 def update_matplotlib(
     fig,
     axis,
@@ -32,6 +40,7 @@ def update_matplotlib(
 
     plt.xlim(min_x, max_x)  # Set x-axis limits to zoom in
     plt.ylim(min_y, max_y)  # Set y-axis limits to zoom in
+
     return (fig, axis)
 
 def map_matplotlib(
@@ -60,7 +69,10 @@ def map_matplotlib(
 
     # Create a scatter plot
     # TODO: Support various sizes and colors dependent on system type and importance
-    ax.scatter(all_x, all_y, s=3)
+    marker_sizes = [3+ 10*o.importance for o in systems]
+    marker_colors = ['white' if o.importance > 0.0 else 'blue' if o.type == 'hyperspace' else 'grey' for o in systems]
+    # marker_labels = [o.name for o in systems if o.importance > 0.0]
+    ax.scatter(all_x, all_y, s=marker_sizes, c=marker_colors)
 
     # Configure scatter plot
     # Set axis labels
@@ -93,7 +105,8 @@ def map_matplotlib(
     # TODO: Only do this for select systems
     # for i, label in enumerate(labels):
     #     ax.text(all_x[i], all_y[i], label)
-
+    # for i, label in enumerate(marker_labels):
+    #     ax.text(all_x[i], all_y[i], label)
     # DOESN'T WORK
     # Configure cursor to display hover info
     # cursors = mplcursors.cursor(scatter_plot, hover=True)
