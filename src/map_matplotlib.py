@@ -3,9 +3,6 @@ import streamlit as st
 import matplotlib
 matplotlib.use('Agg')
 import matplotlib.pyplot as plt
-# import mplcursors
-# import mpld3
-# import streamlit.components.v1 as components
 
 def update_markers(
     axis,
@@ -70,7 +67,11 @@ def map_matplotlib(
     # Create a scatter plot
     # TODO: Support various sizes and colors dependent on system type and importance
     marker_sizes = [3+ 10*o.importance for o in systems]
-    marker_colors = ['white' if o.importance > 0.0 else 'blue' if o.type == 'hyperspace' else 'grey' for o in systems]
+
+    # Change color by type
+    # marker_colors = ['white' if o.importance > 0.0 else 'blue' if o.type == 'hyperspace' else 'grey' for o in systems]
+    marker_colors = ['blue' if o.affiliation == 'Light Side' else "red" if o.affiliation=="Dark Side" else 'grey' for o in systems]
+
     # marker_labels = [o.name for o in systems if o.importance > 0.0]
     ax.scatter(all_x, all_y, s=marker_sizes, c=marker_colors)
 
