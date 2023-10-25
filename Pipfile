@@ -5,7 +5,7 @@ name = "pypi"
 
 [packages]
 streamlit = "*"
-neo4j = "*"
+neo4j = "~=5.13"
 pyvis = "*"
 networkx = "*"
 pandas = "*"

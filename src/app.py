@@ -34,18 +34,31 @@ def get_all_system_names(systems):
 @st.cache_data
 def get_all_systems():
     query = """
-    MATCH (n:System)
-    WHERE n.name IS NOT NULL AND n.X IS NOT NULL AND n.Y IS NOT NULL AND n.Region IS NOT NULL
-    RETURN n
+    MATCH (n:Planet)
+    OPTIONAL MATCH (n)-[:HAS_AFFILIATION]-(m:Affiliation)
+    WHERE n.name IS NOT NULL AND n.X IS NOT NULL AND n.Y IS NOT NULL
+    RETURN n.name as name, n.X as X, n.Y as Y, n.Region as Region, n.type as type, m.name as affiliation
     """
     try:
         records = execute_query(query)
         # Maybe good time to start using that OGM
         result = []
         for r in records:
-            s = System(name=r['n'].get('name', None), x=r['n'].get('X', None), y=r['n'].get('Y', None), region=r['n'].get('Region', None), type = r['n'].get('type', None), importance=r['n'].get('importance', 0.0))
-            # print(f'\n System: {s}')
+            name = r.get('name', None)
+            x = r.get('X', None)
+            y = r.get('Y', None)
+            region = r.get('Region', None)
+            type = r.get('type', None)
+            affiliation = r.get('affiliation', "Neutral")
+            s = System(
+                name=name, 
+                x=x, 
+                y=y, 
+                region=region, 
+                type=type, 
+                affiliation=affiliation)
             result.append(s)
+        print(f'{len(result)} Planets found')
         return result
     except Exception as e:
         print(f'Error: {e}')
@@ -85,9 +98,9 @@ def get_course(
     # TODO: Support intermediate include_systems
     
     query = f"""
-        MATCH (start:System {{name: $start_system}})
-        MATCH (end:System {{name: $end_system}}),
-        path = shortestPath((start)-[:CONNECTED_TO|NEAR*0..{max_jumps}]-(end))
+        MATCH (start:Planet {{name: $start_system}})
+        MATCH (end:Planet {{name: $end_system}}),
+        path = shortestPath((start)-[:NEXT_TO|NEAR*0..{max_jumps}]-(end))
         WHERE ALL(y IN nodes(path) WHERE NOT y.name IN $exclude_systems)
         RETURN path
     """
