@@ -1,6 +1,7 @@
 from dataclasses import dataclass
 
-@dataclass
+# Or Planet
+@dataclass(frozen=True)
 class System:
     name: str
     x: float
