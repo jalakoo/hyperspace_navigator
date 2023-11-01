@@ -38,7 +38,7 @@ def get_important_system_names(systems):
 def get_all_system_names(systems):
     return [s.name for s in systems]
 
-@st.cache_data
+@st.cache_data(ttl="60")
 def get_all_systems():
     query = """
     MATCH (n:Planet)
@@ -59,7 +59,10 @@ def get_all_systems():
             affiliation = r.get('affiliation', "Neutral")
             if affiliation is None or affiliation == "None":
                 affiliation = "Neutral"
-            importance = r.get('pagerank', None)
+            importance = r.get('pagerank', 0.0)
+            if x == None or y == None:
+                # Invalid coordinate data, skip this record
+                continue
             s = System(
                 name=name, 
                 x=x, 
@@ -172,16 +175,6 @@ st.set_page_config(
 )
 
 # HEADER
-# col1, col2, col3 = st.columns([2,1,2])
-# with col1:
-#     st.write('')
-# with col2:
-#     st.image('./media/benjamin-cottrell-astralanalyzer.png', width=100)
-# with col3:
-#     st.write('')
-# st.title("Hyperspace Navigator")
-# st.markdown("<h1 style='text-align: center; color: white;'>Hyperspace Navigator</h1>", unsafe_allow_html=True)
-
 col1, col2 = st.columns([4,1])
 with col1:
     st.title("Hyperspace Navigator")
@@ -258,7 +251,7 @@ with o1:
     st.markdown("")
     with st.expander("Most Important Planets"):
         top_10_systems = ranked_systems[:10]
-        print(f'top_10 systems: {top_10_systems}')
+        # print(f'top_10 systems: {top_10_systems}')
         top_10_str = [f"{s.name} : {s.affiliation}" for s in top_10_systems]
         st.write(top_10_str)
 with o2:
@@ -268,7 +261,7 @@ with o2:
     with st.expander("Most Important Rebel Planets"):
         top_rebel = [s for s in ranked_systems if s.affiliation == "Light Side"]
         top_10_rebels = top_rebel[:10]
-        print(f'top_10 rebel: {top_10_rebels}')
+        # print(f'top_10 rebel: {top_10_rebels}')
         top_10_rebel_str = [f"{s.name} : {s.affiliation}" for s in top_10_rebels]
         st.write(top_10_rebel_str)
 with o3:
@@ -278,7 +271,7 @@ with o3:
     with st.expander("Most Important Imperial Planets"):
         top_imp = [s for s in ranked_systems if s.affiliation == "Dark Side"]
         top_10_imp = top_imp[:10]
-        print(f'top_10 imp systems: {top_10_imp}')
+        # print(f'top_10 imp systems: {top_10_imp}')
         top_10_imp_str = [f"{s.name} : {s.affiliation}" for s in top_10_imp]
         st.write(top_10_imp_str)
 
