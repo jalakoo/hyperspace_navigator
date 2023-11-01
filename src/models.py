@@ -1,6 +1,7 @@
 from dataclasses import dataclass
 
-@dataclass
+# Or Planet
+@dataclass(frozen=True)
 class System:
     name: str
     x: float
@@ -8,4 +9,6 @@ class System:
     region: str
     type: str = 'System'
     importance: float = 0.0
+    pagerank : float = 0.0
+    centrality : float = 0.0
     affiliation: str = "Neutral"

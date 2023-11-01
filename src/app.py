@@ -22,22 +22,29 @@ from map_matplotlib import map_matplotlib, update_matplotlib, update_markers
 #     result = [r['n'].get('name') for r in response]
 #     return result
 
+
+@st.cache_data
+def get_important_systems(systems):
+    sort = sorted(systems, key=lambda system: system.importance, reverse=True)
+    return sort
+
 @st.cache_data
 def get_important_system_names(systems):
     # Returns a list of famous system names
-    return [s.name for s in systems if s.importance > 0.0]
+    sort = get_important_system_names(systems)
+    return [s.name for s in sort]
 
 @st.cache_data
 def get_all_system_names(systems):
     return [s.name for s in systems]
 
-@st.cache_data
+@st.cache_data(ttl="60")
 def get_all_systems():
     query = """
     MATCH (n:Planet)
     OPTIONAL MATCH (n)-[:HAS_AFFILIATION]-(m:Affiliation)
     WHERE n.name IS NOT NULL AND n.X IS NOT NULL AND n.Y IS NOT NULL
-    RETURN n.name as name, n.X as X, n.Y as Y, n.Region as Region, n.type as type, m.name as affiliation
+    RETURN n.name as name, n.X as X, n.Y as Y, n.Region as Region, n.type as type, n.pagerank as pagerank, m.name as affiliation
     """
     try:
         records = execute_query(query)
@@ -50,13 +57,20 @@ def get_all_systems():
             region = r.get('Region', None)
             type = r.get('type', None)
             affiliation = r.get('affiliation', "Neutral")
+            if affiliation is None or affiliation == "None":
+                affiliation = "Neutral"
+            importance = r.get('pagerank', 0.0)
+            if x == None or y == None:
+                # Invalid coordinate data, skip this record
+                continue
             s = System(
                 name=name, 
                 x=x, 
                 y=y, 
                 region=region, 
                 type=type, 
-                affiliation=affiliation)
+                affiliation=affiliation,
+                importance=importance)
             result.append(s)
         print(f'{len(result)} Planets found')
         return result
@@ -129,7 +143,7 @@ def get_course(
         result = []
         for node in nodes:
             # print(f'Node: {node}')
-            result.append(System(name=node['name'], x=node['X'], y=node['Y'], region=node['Region'], type='Plotted System', importance=['importance']))
+            result.append(System(name=node['name'], x=node['X'], y=node['Y'], region=node['Region'], type='Plotted System', importance=node.get('pagerank', 0.0)))
     except Exception as e:
         print(f'\nError: {e} from query response: {path}')
         result = []
@@ -161,16 +175,6 @@ st.set_page_config(
 )
 
 # HEADER
-# col1, col2, col3 = st.columns([2,1,2])
-# with col1:
-#     st.write('')
-# with col2:
-#     st.image('./media/benjamin-cottrell-astralanalyzer.png', width=100)
-# with col3:
-#     st.write('')
-# st.title("Hyperspace Navigator")
-# st.markdown("<h1 style='text-align: center; color: white;'>Hyperspace Navigator</h1>", unsafe_allow_html=True)
-
 col1, col2 = st.columns([4,1])
 with col1:
     st.title("Hyperspace Navigator")
@@ -183,8 +187,9 @@ if st.session_state.get('all_systems') is None:
     if all is None or len(all) == 0:
         st.error('No systems found. Please check your Neo4j database.')
         st.stop()
-    # hyperspace = get_hyperspace_systems()
-    system_names = get_important_system_names(all)
+    ranked_systems = get_important_systems(all)
+    ranked_systems = list(set(ranked_systems)) #dedup
+    # system_names = get_important_system_names(all)
     all_system_names = get_all_system_names(all)
 course = []
 
@@ -238,6 +243,38 @@ selected_systems = [get_all_systems()[s_index], get_all_systems()[e_index]]
 update_markers(ax,selected_systems)
 
 st.pyplot(fig)
+
+o1, o2, o3 = st.columns(3)
+with o1:
+    # Cheap spacer
+    st.markdown("")
+    st.markdown("")
+    with st.expander("Most Important Planets"):
+        top_10_systems = ranked_systems[:10]
+        # print(f'top_10 systems: {top_10_systems}')
+        top_10_str = [f"{s.name} : {s.affiliation}" for s in top_10_systems]
+        st.write(top_10_str)
+with o2:
+    # Cheap spacer
+    st.markdown("")
+    st.markdown("")
+    with st.expander("Most Important Rebel Planets"):
+        top_rebel = [s for s in ranked_systems if s.affiliation == "Light Side"]
+        top_10_rebels = top_rebel[:10]
+        # print(f'top_10 rebel: {top_10_rebels}')
+        top_10_rebel_str = [f"{s.name} : {s.affiliation}" for s in top_10_rebels]
+        st.write(top_10_rebel_str)
+with o3:
+    # Cheap spacer
+    st.markdown("")
+    st.markdown("")
+    with st.expander("Most Important Imperial Planets"):
+        top_imp = [s for s in ranked_systems if s.affiliation == "Dark Side"]
+        top_10_imp = top_imp[:10]
+        # print(f'top_10 imp systems: {top_10_imp}')
+        top_10_imp_str = [f"{s.name} : {s.affiliation}" for s in top_10_imp]
+        st.write(top_10_imp_str)
+
 
 # Plotted course
 if len(course) > 0:
